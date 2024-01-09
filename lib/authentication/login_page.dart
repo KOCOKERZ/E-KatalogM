@@ -1,9 +1,11 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http; // Import paket http
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart'; // Import shared_preferences
 import 'package:email_validator/email_validator.dart';
 import 'package:movieproject/authentication/register_page.dart';
-import 'package:movieproject/screens/home_screen.dart'; // Import HomeScreen
+import 'package:movieproject/screens/home_screen.dart';
+import 'package:movieproject/screens/manajemen.dart'; // Import ManajemenScreen
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key, required this.title}) : super(key: key);
@@ -18,8 +20,13 @@ class _LoginPageState extends State<LoginPage> {
   var rememberValue = false;
   TextEditingController usernameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
+  bool isLoading = false;
 
   Future<void> _login() async {
+    setState(() {
+      isLoading = true;
+    });
+
     final String apiUrl = 'https://asia-southeast2-core-advice-401502.cloudfunctions.net/login';
 
     try {
@@ -29,16 +36,42 @@ class _LoginPageState extends State<LoginPage> {
           'Content-Type': 'application/json',
         },
         body: jsonEncode(<String, String>{
-          'username': usernameController.text, // Ganti dengan usernameController
-          'password': passwordController.text,
+          'username': usernameController.text ??'',
+          'password': passwordController.text ??'',
         }),
       );
 
       if (response.statusCode == 200) {
-        // Jika login berhasil, alihkan ke HomeScreen
-        Navigator.pushReplacementNamed(context, '/home');
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+        // Simpan token di SharedPreferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        prefs.setString('token', responseData['token']);
+        print('Token saved in SharedPreferences: ${prefs.getString('token')}');
+
+
+        if (responseData.containsKey('role')) {
+          String role = responseData['role'] as String;
+
+          if (role == 'admin') {
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => TambahPosting()));
+          } else if (role == 'user') {
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Invalid role. Please check your credentials.'),
+              ),
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Invalid response format. Please try again later.'),
+            ),
+          );
+        }
       } else {
-        // Jika login gagal, tampilkan pesan kesalahan
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Login failed. Please check your credentials.'),
@@ -46,15 +79,19 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
     } catch (e) {
-      // Tangani kesalahan koneksi atau kesalahan lainnya
       print('Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('An error occurred. Please try again later.'),
         ),
       );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -81,13 +118,13 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 children: [
                   TextFormField(
-                    controller: usernameController, // Ganti dengan usernameController
+                    controller: usernameController,
                     validator: (value) =>
-                    value!.isEmpty ? "Please enter your username" : null, // Validasi untuk username
+                    value!.isEmpty ? "Please enter your username" : null,
                     maxLines: 1,
                     decoration: InputDecoration(
-                      hintText: 'Enter your username', // Ganti dengan pesan yang sesuai
-                      prefixIcon: const Icon(Icons.person), // Ganti dengan ikon username
+                      hintText: 'Enter your username',
+                      prefixIcon: const Icon(Icons.person),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -130,15 +167,19 @@ class _LoginPageState extends State<LoginPage> {
                     height: 20,
                   ),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: isLoading
+                        ? null
+                        : () {
                       if (_formKey.currentState!.validate()) {
-                        _login(); // Panggil fungsi login saat tombol ditekan
+                        _login();
                       }
                     },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.fromLTRB(40, 15, 40, 15),
                     ),
-                    child: const Text(
+                    child: isLoading
+                        ? CircularProgressIndicator()
+                        : const Text(
                       'Sign in',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
@@ -153,11 +194,14 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       const Text('Not registered yet?'),
                       TextButton(
-                        onPressed: () {
+                        onPressed: isLoading
+                            ? null
+                            : () {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const RegisterPage(title: 'Register UI'),
+                              builder: (context) =>
+                              const RegisterPage(title: 'Register UI'),
                             ),
                           );
                         },
