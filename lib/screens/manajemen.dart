@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart'; // Import shared_preferences
 
 void main() {
   runApp(MyApp());
@@ -67,14 +68,19 @@ class _TambahPostingState extends State<TambahPosting> {
         'Aktor': _aktorController.text,
         'Image': _image?.path ?? '', // Path gambar jika ada, jika tidak kosongkan
       };
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
 
       final http.Response response = await http.post(
         Uri.parse(apiUrl),
         headers: <String, String>{
           'Content-Type': 'application/json',
+          if (token != null) 'Token': token,
         },
         body: jsonEncode(postData),
       );
+
 
       if (response.statusCode == 200) {
         // Jika request berhasil, tambahkan logika atau tampilan sesuai kebutuhan
