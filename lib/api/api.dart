@@ -5,15 +5,16 @@ import 'package:http/http.dart' as http;
 
 class Api {
   static const _trendingUrl =
-      'https://api.themoviedb.org/3/trending/movie/day?api_key=${Constants.apikey}';
+      'https://api.themoviedb.org/3/trending/movie/day?api_key=${Constants
+      .apikey}';
 
   static const _topratedUrl =
-      'https://api.themoviedb.org/3/movie/top_rated?api_key=${Constants.apikey}';
+      'https://api.themoviedb.org/3/movie/top_rated?api_key=${Constants
+      .apikey}';
 
   static const _upcomingUrl =
       'https://api.themoviedb.org/3/movie/upcoming?api_key=${Constants.apikey}';
-  static const _databaseUrl =
-      'https://asia-southeast2-core-advice-401502.cloudfunctions.net/getallfilm';
+
 
 
   Future<List<Movie>> getTrendingMovies() async {
@@ -45,13 +46,4 @@ class Api {
       throw Exception('Something went wrong');
     }
   }
-Future<List<Movie>> getDatabaseMovies() async {
-  final response = await http.get(Uri.parse(_databaseUrl));
-  if (response.statusCode == 200) {
-    final decodedData = json.decode(response.body)['results'] as List;
-    return decodedData.map((movie) => Movie.fromJson(movie)).toList();
-  } else {
-    throw Exception('Something went wrong');
-  }
-}
 }

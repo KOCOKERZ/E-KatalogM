@@ -21,7 +21,7 @@ class _RegisterPageState extends State<RegisterPage> {
   TextEditingController usernameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
-  final List<String> roles = ['admin', 'user'];
+
 
   // Tambahkan deklarasi isLoading di sini
   bool isLoading = false;
@@ -103,23 +103,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   const SizedBox(
                     height: 20,
                   ),
-                  DropdownButtonFormField<String>(
-                    value: _selectedRole,
-                    hint: Text('Select Role'),
-                    onChanged: (String? value) {
-                      setState(() {
-                        _selectedRole = value;
-                      });
-                    },
-                    items: roles.map((String role) {
-                      return DropdownMenuItem<String>(
-                        value: role,
-                        child: Text(role),
-                      );
-                    }).toList(),
-                    validator: (value) =>
-                    value == null ? "Please select a role" : null,
-                  ),
                   const SizedBox(
                     height: 20,
                   ),
@@ -185,7 +168,7 @@ class _RegisterPageState extends State<RegisterPage> {
         'name': nameController.text,
         'username': usernameController.text,
         'password': passwordController.text,
-        'role': _selectedRole,
+        'role': 'user',
       };
 
       final http.Response response = await http.post(
