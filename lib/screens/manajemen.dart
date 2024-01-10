@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart'; // Import shared_preferences
 
 void main() {
   runApp(MyApp());
@@ -34,7 +35,7 @@ class _TambahPostingState extends State<TambahPosting> {
   TextEditingController _penulisController = TextEditingController();
   TextEditingController _sutradaraController = TextEditingController();
   TextEditingController _aktorController = TextEditingController();
-  XFile? _image;
+  TextEditingController _gambarController = TextEditingController();
 
   Future<void> _simpanPosting() async {
     if (_judulController.text.isEmpty ||
@@ -43,7 +44,8 @@ class _TambahPostingState extends State<TambahPosting> {
         _sinopsisController.text.isEmpty ||
         _penulisController.text.isEmpty ||
         _sutradaraController.text.isEmpty ||
-        _aktorController.text.isEmpty ) {
+        _aktorController.text.isEmpty ||
+        _gambarController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Semua kolom harus diisi.'),
@@ -65,16 +67,21 @@ class _TambahPostingState extends State<TambahPosting> {
         'Penulis': _penulisController.text,
         'Sutradara': _sutradaraController.text,
         'Aktor': _aktorController.text,
-        'Image': _image?.path ?? '', // Path gambar jika ada, jika tidak kosongkan
+        'Image': _gambarController.text,
       };
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
 
       final http.Response response = await http.post(
         Uri.parse(apiUrl),
         headers: <String, String>{
           'Content-Type': 'application/json',
+          if (token != null) 'Token': token,
         },
         body: jsonEncode(postData),
       );
+
 
       if (response.statusCode == 200) {
         // Jika request berhasil, tambahkan logika atau tampilan sesuai kebutuhan
@@ -100,19 +107,6 @@ class _TambahPostingState extends State<TambahPosting> {
     }
   }
 
-  Future<void> _pickImage() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? pickedImage = await _picker.pickImage(source: ImageSource.gallery);
-    setState(() {
-      _image = pickedImage;
-    });
-  }
-
-  void _clearImage() {
-    setState(() {
-      _image = null;
-    });
-  }
 
   Widget _buildInputFields() {
     return Column(
@@ -145,38 +139,15 @@ class _TambahPostingState extends State<TambahPosting> {
           controller: _aktorController,
           decoration: InputDecoration(labelText: 'Aktor'),
         ),
+        TextField(
+          controller: _gambarController,
+          decoration: InputDecoration(labelText: 'Path Gambar'), // Ganti dengan input path gambar
+        ),
         SizedBox(height: 16.0),
         ElevatedButton(
           onPressed: _simpanPosting,
           child: Text('Simpan Tambah Posting'),
         ),
-        SizedBox(height: 16.0),
-        ElevatedButton(
-          onPressed: _pickImage,
-          child: Text('Pilih Gambar'),
-        ),
-        if (_image != null)
-          Column(
-            children: [
-              SizedBox(height: 8.0),
-              Container(
-                height: 100,
-                width: 100,
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: FileImage(File(_image!.path)),
-                    fit: BoxFit.cover,
-                  ),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
-              SizedBox(height: 8.0),
-              ElevatedButton(
-                onPressed: _clearImage,
-                child: Text('Hapus Gambar'),
-              ),
-            ],
-          ),
       ],
     );
   }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart'; // Import shared_preferences
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:movieproject/authentication/register_page.dart';
 import 'package:movieproject/screens/home_screen.dart';
-import 'package:movieproject/screens/manajemen.dart'; // Import ManajemenScreen
+import 'package:movieproject/screens/manajemen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key, required this.title}) : super(key: key);
@@ -18,6 +18,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   var rememberValue = false;
+  String? _token;
   TextEditingController usernameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   bool isLoading = false;
@@ -27,7 +28,8 @@ class _LoginPageState extends State<LoginPage> {
       isLoading = true;
     });
 
-    final String apiUrl = 'https://asia-southeast2-core-advice-401502.cloudfunctions.net/login';
+    final String apiUrl =
+        'https://asia-southeast2-core-advice-401502.cloudfunctions.net/login';
 
     try {
       final http.Response response = await http.post(
@@ -36,8 +38,8 @@ class _LoginPageState extends State<LoginPage> {
           'Content-Type': 'application/json',
         },
         body: jsonEncode(<String, String>{
-          'username': usernameController.text ??'',
-          'password': passwordController.text ??'',
+          'username': usernameController.text ?? '',
+          'password': passwordController.text ?? '',
         }),
       );
 
@@ -47,30 +49,19 @@ class _LoginPageState extends State<LoginPage> {
         // Simpan token di SharedPreferences
         SharedPreferences prefs = await SharedPreferences.getInstance();
         prefs.setString('token', responseData['token']);
+        prefs.setString('loginTime', DateTime.now().toString()); // Waktu login
+
         print('Token saved in SharedPreferences: ${prefs.getString('token')}');
 
+        // Simpan role di SharedPreferences
+        prefs.setString('role', responseData['role']);
 
-        if (responseData.containsKey('role')) {
-          String role = responseData['role'] as String;
+        // Simpan token di _token
+        setState(() {
+          _token = responseData['token'];
+        });
 
-          if (role == 'admin') {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => TambahPosting()));
-          } else if (role == 'user') {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen()));
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Invalid role. Please check your credentials.'),
-              ),
-            );
-          }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Invalid response format. Please try again later.'),
-            ),
-          );
-        }
+        _checkLoginStatus();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -92,6 +83,30 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _checkLoginStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+    String? loginTime = prefs.getString('loginTime');
+
+    if (token != null && loginTime != null) {
+      DateTime loginDateTime = DateTime.parse(loginTime);
+      DateTime currentTime = DateTime.now();
+      Duration difference = currentTime.difference(loginDateTime);
+
+      // Cek apakah token masih berlaku selama 2 jam (7200 detik)
+      if (difference.inSeconds <= 7200) {
+        // Token masih berlaku, navigasikan ke halaman yang sesuai
+        String role = prefs.getString('role') ?? '';
+        if (role == 'admin') {
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (context) => TambahPosting()));
+        } else if (role == 'user') {
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (context) => HomeScreen()));
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -200,8 +215,8 @@ class _LoginPageState extends State<LoginPage> {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                              const RegisterPage(title: 'Register UI'),
+                              builder: (context) => const RegisterPage(
+                                  title: 'Register UI'),
                             ),
                           );
                         },

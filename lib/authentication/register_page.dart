@@ -1,9 +1,8 @@
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
-import 'package:movieproject/authentication/register_page.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:movieproject/authentication/login_page.dart';
-
-
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key, required this.title}) : super(key: key);
@@ -16,6 +15,16 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   var rememberValue = false;
+  String? _selectedRole;
+
+  TextEditingController nameController = TextEditingController();
+  TextEditingController usernameController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+
+  final List<String> roles = ['admin', 'user'];
+
+  // Tambahkan deklarasi isLoading di sini
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -41,47 +50,40 @@ class _RegisterPageState extends State<RegisterPage> {
               key: _formKey,
               child: Column(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          validator: (value) => EmailValidator.validate(value!)
-                              ? null
-                              : "Please enter a valid email",
-                          maxLines: 1,
-                          decoration: InputDecoration(
-                            hintText: 'Name',
-                            prefixIcon: const Icon(Icons.person),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
+                  TextFormField(
+                    controller: nameController,
+                    validator: (value) =>
+                    value!.isEmpty ? "Isi nama Anda " : null,
+                    maxLines: 1,
+                    decoration: InputDecoration(
+                      hintText: 'Name',
+                      prefixIcon: const Icon(Icons.person),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      const SizedBox(
-                        width: 20,
-                      ),
-                      Expanded(
-                        child: TextFormField(
-                          validator: (value) => EmailValidator.validate(value!)
-                              ? null
-                              : "Please enter a valid email",
-                          maxLines: 1,
-                          decoration: InputDecoration(
-                            hintText: 'Username',
-                            prefixIcon: const Icon(Icons.person),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                   const SizedBox(
                     height: 20,
                   ),
                   TextFormField(
+                    controller: usernameController,
+                    validator: (value) =>
+                    value!.isEmpty ? "Input kan Username Anda" : null,
+                    maxLines: 1,
+                    decoration: InputDecoration(
+                      hintText: 'Username',
+                      prefixIcon: const Icon(Icons.person),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  TextFormField(
+                    controller: passwordController,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your password';
@@ -101,14 +103,38 @@ class _RegisterPageState extends State<RegisterPage> {
                   const SizedBox(
                     height: 20,
                   ),
+                  DropdownButtonFormField<String>(
+                    value: _selectedRole,
+                    hint: Text('Select Role'),
+                    onChanged: (String? value) {
+                      setState(() {
+                        _selectedRole = value;
+                      });
+                    },
+                    items: roles.map((String role) {
+                      return DropdownMenuItem<String>(
+                        value: role,
+                        child: Text(role),
+                      );
+                    }).toList(),
+                    validator: (value) =>
+                    value == null ? "Please select a role" : null,
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
                   ElevatedButton(
                     onPressed: () {
-                      if (_formKey.currentState!.validate()) {}
+                      if (_formKey.currentState!.validate()) {
+                        _register();
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.fromLTRB(40, 15, 40, 15),
                     ),
-                    child: const Text(
+                    child: isLoading
+                        ? CircularProgressIndicator()
+                        : const Text(
                       'Sign up',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
@@ -121,14 +147,15 @@ class _RegisterPageState extends State<RegisterPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('Ngges Boga Akun? Caw kadie'),
+                      const Text('Not registered yet?'),
                       TextButton(
                         onPressed: () {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                              const LoginPage(title: 'Login UI'),
+                              builder: (context) => const LoginPage(
+                                title: 'Login UI',
+                              ),
                             ),
                           );
                         },
@@ -143,5 +170,67 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _register() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final String apiUrl =
+          'https://asia-southeast2-core-advice-401502.cloudfunctions.net/createaccount';
+
+      final Map<String, dynamic> postData = {
+        'name': nameController.text,
+        'username': usernameController.text,
+        'password': passwordController.text,
+        'role': _selectedRole,
+      };
+
+      final http.Response response = await http.post(
+        Uri.parse(apiUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(postData),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Registration successful.'),
+          ),
+        );
+
+        // Pindah ke halaman login jika registrasi berhasil
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const LoginPage(
+              title: 'Login UI',
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Registration failed. Please try again. ${response.body}'),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('An error occurred. Please try again later.'),
+        ),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 }
