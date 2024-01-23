@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:movieproject/api/api.dart';
 import 'package:movieproject/api/sapi.dart';
+import 'package:movieproject/api/database.dart';
 import 'package:movieproject/models/movie.dart';
 import 'package:movieproject/models/series.dart';
+import 'package:movieproject/models/lokal.dart';
 import '../widgets/movies_slider.dart';
 import 'package:movieproject/widgets/multi_search.dart';
 import '../widgets/trending_slider.dart';
 import '../widgets/trending_slider_series.dart';
+import '../widgets/trending_slider_lokal.dart';
 import 'package:movieproject/colors.dart';
 
 void main() {
@@ -30,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Series>> trendingSeries;
   late Future<List<Series>> topRatedSeries;
   late Future<List<Series>> popularSeries;
+  late Future<List<Lokal>> filmDetails;
 
   @override
   void initState() {
@@ -40,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
     trendingSeries = SApi().getTrendingSeries();
     topRatedSeries = SApi().getTopRatedSeries();
     popularSeries = SApi().getPopularSeries();
+    filmDetails = DatabaseApi().getFilmDetails();
   }
 
   @override
@@ -205,11 +210,33 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                 ),
+
+                // Bagian baru untuk menampilkan detail film lokal
+                SectionTitle('Film Lokal'),
+                SizedBox(
+                  child: FutureBuilder(
+                    future: filmDetails,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text(snapshot.error.toString()),
+                        );
+                      } else if (snapshot.hasData) {
+                        return TrendingSliderLokal(snapshot: snapshot);
+                      } else {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+                    },
+                  ),
+                ),
               ],
             ),
           ),
         ),
       ),
+
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(

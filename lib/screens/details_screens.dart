@@ -3,8 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:movieproject/constant.dart';
 import 'package:movieproject/models/movie.dart';
 import 'package:movieproject/widgets/back_button.dart';
+import 'package:movieproject/models/Comment.dart';
 
-class DetailScreen extends StatelessWidget {
+class DetailScreen extends StatefulWidget {
   const DetailScreen({
     Key? key,
     required this.movie,
@@ -13,12 +14,20 @@ class DetailScreen extends StatelessWidget {
   final Movie movie;
 
   @override
+  _DetailScreenState createState() => _DetailScreenState();
+}
+
+class _DetailScreenState extends State<DetailScreen> {
+  TextEditingController commentController = TextEditingController();
+  TextEditingController ratingController = TextEditingController();
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: NetworkImage('${Constants.imageUrl}${movie.posterPath}'),
+            image: NetworkImage('${Constants.imageUrl}${widget.movie.posterPath}'),
             fit: BoxFit.cover,
           ),
         ),
@@ -71,7 +80,7 @@ class DetailScreen extends StatelessWidget {
                                 ],
                               ),
                               child: Image.network(
-                                '${Constants.imageUrl}${movie.posterPath}',
+                                '${Constants.imageUrl}${widget.movie.posterPath}',
                                 fit: BoxFit.cover,
                               ),
                             ),
@@ -88,7 +97,7 @@ class DetailScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          movie.overview,
+                          widget.movie.overview,
                           style: GoogleFonts.roboto(
                             fontSize: 18,
                             fontWeight: FontWeight.w400,
@@ -100,11 +109,11 @@ class DetailScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Release Date: ${movie.releaseDate}',
+                              'Release Date: ${widget.movie.releaseDate}',
                               style: GoogleFonts.roboto(
                                 fontSize: 17,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Colors.black,
                               ),
                             ),
                             Row(
@@ -114,16 +123,72 @@ class DetailScreen extends StatelessWidget {
                                   color: Colors.amber,
                                 ),
                                 Text(
-                                  '${movie.voteAverage.toStringAsFixed(1)}/10',
+                                  '${widget.movie.voteAverage.toStringAsFixed(1)}/10',
                                   style: GoogleFonts.roboto(
                                     fontSize: 17,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: Colors.black,
                                   ),
                                 ),
                               ],
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Textfield untuk komentar
+                        TextField(
+                          controller: commentController,
+                          decoration: InputDecoration(
+                            hintText: 'Tambahkan Komentar',
+                            hintStyle: TextStyle(color: Colors.grey),
+                            fillColor: Colors.white,
+                            filled: true,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          maxLines: 3,
+                          style: TextStyle(color: Colors.black),
+                        ),
+                        const SizedBox(height: 16),
+                        // Textfield untuk rating
+                        TextField(
+                          controller: ratingController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            hintText: 'Rating (1-10)',
+                            hintStyle: TextStyle(color: Colors.grey),
+                            fillColor: Colors.white,
+                            filled: true,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          style: TextStyle(color: Colors.black),
+                        ),
+                        const SizedBox(height: 16),
+                        // Tombol untuk mengirim komentar
+                        ElevatedButton(
+                          onPressed: () {
+                            // Membuat instance Comment dan mengirimkan komentar dan rating
+                            Comment comment = Comment(
+                              id: '1',
+                              filmId: '1',
+                              name: '1',
+                              tanggal: '1',
+                              komentar: commentController.text,
+                            );
+
+                            comment.postComment();
+
+                            // Tampilkan notifikasi atau navigasi ke halaman komentar jika diperlukan
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Komentar berhasil dikirim.'),
+                              ),
+                            );
+                          },
+                          child: Text('Kirim Komentar'),
                         ),
                       ],
                     ),
