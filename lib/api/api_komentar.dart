@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart'; // Import ini diperlukan untuk menggunakan ScaffoldMessenger
 import 'package:http/http.dart' as http;
 import 'package:movieproject/models/komentar.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import shared_preferences
 
 class ApiKomentar {
   static const _komentarUrl =
@@ -9,10 +10,14 @@ class ApiKomentar {
 
   Future<void> postComment(BuildContext context, Comment comment) async {
     try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      String? token = prefs.getString('token');
       final http.Response response = await http.post(
         Uri.parse(_komentarUrl),
         headers: <String, String>{
           'Content-Type': 'application/json',
+          if (token != null) 'Token': token,
         },
         body: jsonEncode(<String, dynamic>{
           'ID_FILM': comment.idFilm,
