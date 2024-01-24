@@ -12,6 +12,8 @@ import '../widgets/trending_slider.dart';
 import '../widgets/trending_slider_series.dart';
 import '../widgets/trending_slider_lokal.dart';
 import 'package:movieproject/colors.dart';
+import 'package:movieproject/authentication/login_page.dart'; // Import halaman login jika belum diimport
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -47,6 +49,17 @@ class _HomeScreenState extends State<HomeScreen> {
     filmDetails = DatabaseApi().getFilmDetails();
   }
 
+  // Fungsi untuk logout
+  void _logout() async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.remove('token');
+    prefs.remove('loginTime');
+    prefs.remove('role');
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginPage(title: 'Sign In')),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,6 +88,16 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             centerTitle: true,
+            actions: [
+              // Tombol logout
+              IconButton(
+                onPressed: _logout,
+                icon: Icon(
+                  Icons.exit_to_app,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -253,7 +276,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
 class SectionTitle extends StatelessWidget {
   final String title;
 

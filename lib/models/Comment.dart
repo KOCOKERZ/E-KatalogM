@@ -2,15 +2,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class Comment {
-  final String id;
-  final String filmId;
   final String name;
   final String tanggal;
   final String komentar;
 
   Comment({
-    required this.id,
-    required this.filmId,
     required this.name,
     required this.tanggal,
     required this.komentar,
@@ -23,8 +19,6 @@ class Comment {
           'https://asia-southeast2-core-advice-401502.cloudfunctions.net/createkomentator';
 
       final Map<String, dynamic> postData = {
-        'ID': id,
-        'ID_Film': filmId,
         'Name': name,
         'Tanggal': tanggal,
         'Komentar': komentar,

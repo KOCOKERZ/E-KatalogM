@@ -172,8 +172,6 @@ class _DetailScreenState extends State<DetailScreen> {
                           onPressed: () {
                             // Membuat instance Comment dan mengirimkan komentar dan rating
                             Comment comment = Comment(
-                              id: '1',
-                              filmId: '1',
                               name: '1',
                               tanggal: '1',
                               komentar: commentController.text,
