@@ -34,7 +34,7 @@ class ApiKomentar {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to add comment. Please try again.'),
+            content: Text('Failed to add comment. Please try again .'),
           ),
         );
       }
